@@ -17,6 +17,7 @@ import { FOCUS_MODE_FORM_CFG } from './form-cfgs/focus-mode-form.const';
 import { IS_FIREFOX } from '../../util/is-firefox';
 import { REMINDER_FORM_CFG } from './form-cfgs/reminder-form.const';
 import { SHORT_SYNTAX_FORM_CFG } from './form-cfgs/short-syntax-form.const';
+import { LLM_FORM_CFG_SECTION } from './form-cfgs/llm-form.const';
 
 const filterGlobalConfigForm = (cfg: ConfigFormSection<any>): boolean => {
   return (
@@ -34,6 +35,7 @@ export const GLOBAL_CONFIG_FORM_CONFIG: ConfigFormConfig = [
   TIME_TRACKING_FORM_CFG,
   REMINDER_FORM_CFG,
   SCHEDULE_FORM_CFG,
+  LLM_FORM_CFG_SECTION,
 ].filter(filterGlobalConfigForm);
 
 export const GLOBAL_IMEX_FORM_CONFIG: ConfigFormConfig = [

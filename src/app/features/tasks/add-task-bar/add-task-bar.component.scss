@@ -138,3 +138,47 @@
 
   border-color: var(--theme-extra-border-color);
 }
+
+// LLM Mode Styles
+.llm-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--s);
+  color: var(--theme-accent-color);
+  font-weight: 500;
+
+  mat-icon {
+    color: var(--theme-accent-color);
+  }
+}
+
+.llm-result {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s);
+  padding: var(--s);
+  border-radius: var(--card-border-radius);
+  background-color: var(--theme-bg-lighter);
+  border-left: 3px solid var(--theme-accent-color);
+  white-space: pre-wrap;
+
+  &.error {
+    border-left-color: var(--theme-warn-color);
+    background-color: var(--theme-warn-bg);
+
+    mat-icon {
+      color: var(--theme-warn-color);
+    }
+  }
+
+  mat-icon {
+    color: var(--theme-accent-color);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    line-height: 1.4;
+  }
+}

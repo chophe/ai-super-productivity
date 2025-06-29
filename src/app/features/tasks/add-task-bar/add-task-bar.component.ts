@@ -47,6 +47,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { IssueIconPipe } from '../../issue/issue-icon/issue-icon.pipe';
 import { TagComponent } from '../../tag/tag/tag.component';
 import { TaskCopy } from '../task.model';
+import { LLMService } from '../../../core/llm/llm.service';
 
 @Component({
   selector: 'add-task-bar',
@@ -78,6 +79,7 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
   private _workContextService = inject(WorkContextService);
   private _store = inject(Store);
   private _addTaskBarService = inject(AddTaskBarService);
+  private _llmService = inject(LLMService);
 
   tabindex = input<number>(0);
   isDoubleEnterMode = input<boolean>(false);
@@ -102,6 +104,9 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
   isAddToBacklog = signal(false);
   isSearchIssueProviders = signal(false);
   isSearchIssueProviders$ = toObservable(this.isSearchIssueProviders);
+  isLLMMode = signal(false);
+  llmProcessing = signal(false);
+  llmResult = signal<string | null>(null);
 
   inputEl = viewChild<ElementRef>('inputEl');
 
@@ -170,6 +175,8 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
           if (ev.key === 'Escape') {
             this.blurred.emit();
             this.activatedIssueTask$.next(null);
+            this.isLLMMode.set(false);
+            this.llmResult.set(null);
           } else if (ev.key === '1' && ev.ctrlKey) {
             this.toggleIsAddToBottom();
             ev.preventDefault();
@@ -179,6 +186,22 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
           } else if (ev.key === '3' && ev.ctrlKey) {
             this.isAddToBacklog.set(!this.isAddToBacklog());
             ev.preventDefault();
+          }
+        },
+      );
+
+      // Listen for input changes to detect "/" trigger
+      (this.inputEl() as ElementRef).nativeElement.addEventListener(
+        'input',
+        (ev: Event) => {
+          const target = ev.target as HTMLInputElement;
+          const value = target.value;
+
+          if (value.startsWith('/') && value.length > 1) {
+            this.isLLMMode.set(true);
+          } else if (!value.startsWith('/')) {
+            this.isLLMMode.set(false);
+            this.llmResult.set(null);
           }
         },
       );
@@ -260,7 +283,16 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
 
     if (!item) {
       return;
-    } else if (typeof item === 'string') {
+    }
+
+    // Handle LLM prompts
+    if (typeof item === 'string' && item.startsWith('/') && item.length > 1) {
+      await this._processLLMPrompt(item.substring(1)); // Remove the "/" prefix
+      this._isAddInProgress = false;
+      return;
+    }
+
+    if (typeof item === 'string') {
       const newTaskStr = item as string;
       if (newTaskStr.length > 0) {
         this.doubleEnterCount.set(0);
@@ -346,6 +378,36 @@ export class AddTaskBarComponent implements AfterViewInit, OnDestroy {
         );
       }
     });
+  }
+
+  private async _processLLMPrompt(prompt: string): Promise<void> {
+    this.llmProcessing.set(true);
+    this.llmResult.set(null);
+
+    try {
+      this._llmService.processPrompt(prompt).subscribe({
+        next: (result) => {
+          this.llmProcessing.set(false);
+          this.llmResult.set(result.message);
+
+          if (result.success) {
+            // Clear the input after successful processing
+            this.taskSuggestionsCtrl.setValue('');
+            this.isLLMMode.set(false);
+
+            // Focus input for next command
+            this._focusInput();
+          }
+        },
+        error: (error) => {
+          this.llmProcessing.set(false);
+          this.llmResult.set(`Error: ${error.message}`);
+        },
+      });
+    } catch (error) {
+      this.llmProcessing.set(false);
+      this.llmResult.set(`Error: ${(error as Error).message}`);
+    }
   }
 
   private _focusInput(): void {

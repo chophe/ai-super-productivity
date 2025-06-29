@@ -1,4 +1,5 @@
 import { GlobalConfigState } from './global-config.model';
+import { DEFAULT_LLM_CONFIG } from '../../core/llm/llm.model';
 import { getDefaultVoice } from '../domina-mode/getAvailableVoices';
 import { TRACKING_INTERVAL } from '../../app.constants';
 
@@ -168,6 +169,8 @@ export const DEFAULT_GLOBAL_CONFIG: GlobalConfigState = {
     lunchBreakStart: '13:00',
     lunchBreakEnd: '14:00',
   },
+
+  llm: DEFAULT_LLM_CONFIG,
 
   sync: {
     isEnabled: false,

@@ -3,6 +3,7 @@ import { ProjectCfgFormKey } from '../project/project.model';
 import { LanguageCode, MODEL_VERSION_KEY } from '../../app.constants';
 import { LegacySyncProvider } from '../../imex/sync/legacy-sync-provider.model';
 import { KeyboardConfig } from './keyboard-config.model';
+import { LLMConfig } from '../../core/llm/llm.model';
 
 export type MiscConfig = Readonly<{
   isAutMarkParentAsDone: boolean;
@@ -189,6 +190,7 @@ export type GlobalConfigState = Readonly<{
   schedule: ScheduleConfig;
   dominaMode: DominaModeConfig;
   focusMode: FocusModeConfig;
+  llm: LLMConfig;
 
   sync: SyncConfig;
   dailySummaryNote?: DailySummaryNote;
@@ -205,7 +207,8 @@ export type GlobalSectionConfig =
   | ScheduleConfig
   | ReminderConfig
   | DailySummaryNote
-  | SyncConfig;
+  | SyncConfig
+  | LLMConfig;
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export interface LimitedFormlyFieldConfig<FormModel>
