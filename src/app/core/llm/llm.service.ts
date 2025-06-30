@@ -284,7 +284,8 @@ export class LLMService {
     const isOpenAICompatible =
       this._llmConfig.baseUrl.includes('openai') ||
       this._llmConfig.baseUrl.includes('azure') ||
-      this._llmConfig.baseUrl.includes('/v1/chat/completions');
+      this._llmConfig.baseUrl.includes('/v1/chat/completions') ||
+      this._llmConfig.provider === LLMProvider.OPENAI;
 
     console.log('🟠 Is OpenAI compatible:', isOpenAICompatible);
 
@@ -306,15 +307,19 @@ export class LLMService {
         ? this._llmConfig.baseUrl
         : `${this._llmConfig.baseUrl}/v1/chat/completions`;
     } else {
-      // Use generic format for other custom APIs
+      // Use OpenAI messages format as default for most modern APIs
       body = {
         model: this._llmConfig.model,
-        prompt: request.prompt,
-        ...(request.systemPrompt && { system_prompt: request.systemPrompt }),
+        messages: [
+          ...(request.systemPrompt ? [{ role: 'system', content: request.systemPrompt }] : []),
+          { role: 'user', content: request.prompt },
+        ],
         max_tokens: request.maxTokens || 500,
         temperature: request.temperature || 0.1,
       };
-      endpoint = `${this._llmConfig.baseUrl}/v1/chat/completions`;
+      endpoint = this._llmConfig.baseUrl.endsWith('/v1/chat/completions')
+        ? this._llmConfig.baseUrl
+        : `${this._llmConfig.baseUrl}/v1/chat/completions`;
     }
 
     console.log('🟠 Custom API request body:', JSON.stringify(body, null, 2));
@@ -329,7 +334,8 @@ export class LLMService {
 
     return this._http.post<any>(endpoint, cleanBody, { headers }).pipe(
       map((response) => {
-        if (isOpenAICompatible) {
+        // Most modern APIs use OpenAI-compatible response format
+        if (response.choices && response.choices[0] && response.choices[0].message) {
           // Parse OpenAI-compatible response
           return {
             content: response.choices[0].message.content,
@@ -340,7 +346,7 @@ export class LLMService {
             },
           };
         } else {
-          // Parse generic response
+          // Fallback for other response formats
           return {
             content: response.content || response.text || response.response,
             usage: response.usage || {
