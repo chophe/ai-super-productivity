@@ -245,7 +245,7 @@ export class LLMService {
     };
 
     return this._http
-      .post<any>(`${this._llmConfig.baseUrl}/v1/completions`, body, { headers })
+      .post<any>(`${this._llmConfig.baseUrl}/v1/chat/completions`, body, { headers })
       .pipe(
         map((response) => ({
           content: response.content || response.text || response.response,
