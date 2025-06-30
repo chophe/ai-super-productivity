@@ -74,6 +74,15 @@ export class LLMService {
   }
 
   /**
+   * Clean JSON content by removing JavaScript-style comments
+   */
+  private _cleanJsonContent(content: string): string {
+    // Remove single-line comments (// comment)
+    // This regex matches // followed by any characters until end of line
+    return content.replace(/\/\/.*$/gm, '').trim();
+  }
+
+  /**
    * Interpret a natural language prompt using the configured LLM
    */
   private _interpretPrompt(prompt: string): Observable<LLMTaskInterpretation> {
@@ -87,9 +96,13 @@ export class LLMService {
     return this._callLLM(request).pipe(
       map((response) => {
         try {
-          const interpretation = JSON.parse(response.content) as LLMTaskInterpretation;
+          // Clean the response content to remove any JavaScript-style comments
+          const cleanedContent = this._cleanJsonContent(response.content);
+          const interpretation = JSON.parse(cleanedContent) as LLMTaskInterpretation;
           return interpretation;
         } catch (error) {
+          console.error('JSON parsing error:', error);
+          console.error('Original content:', response.content);
           return {
             actions: [],
             confidence: 0,
