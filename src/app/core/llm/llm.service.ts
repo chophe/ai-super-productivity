@@ -511,16 +511,32 @@ export class LLMService {
     }
 
     try {
+      // Handle due time if provided
+      let dueWithTime: number | undefined;
+      if (action.dueDate && action.dueTime) {
+        const dueDateTime = this._combineDateAndTime(action.dueDate, action.dueTime);
+        if (dueDateTime) {
+          dueWithTime = dueDateTime.getTime();
+        }
+      }
+
       const taskId = this._taskService.add(action.title, false, {
         notes: action.description || '',
         tagIds: action.tags || [],
         timeEstimate: action.estimate ? action.estimate * 60000 : undefined, // Convert minutes to milliseconds
         projectId: action.projectId || undefined,
+        ...(dueWithTime && { dueWithTime }), // Add due time if available
       });
+
+      const timeInfo = dueWithTime 
+        ? ` scheduled for ${action.dueTime} on ${action.dueDate}`
+        : action.estimate 
+        ? ` (estimated ${action.estimate} minutes)`
+        : '';
 
       return {
         success: true,
-        message: `Created task: "${action.title}"`,
+        message: `Created task: "${action.title}"${timeInfo}`,
         action: { ...action, taskId },
       };
     } catch (error) {
@@ -529,6 +545,33 @@ export class LLMService {
         message: `Failed to create task: ${(error as Error).message}`,
         action,
       };
+    }
+  }
+
+  /**
+   * Combine date and time strings into a Date object
+   */
+  private _combineDateAndTime(dateStr: string, timeStr: string): Date | null {
+    try {
+      // Parse date (YYYY-MM-DD format)
+      const [year, month, day] = dateStr.split('-').map(Number);
+      
+      // Parse time (HH:MM format)
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      // Create date object
+      const date = new Date(year, month - 1, day, hours, minutes);
+      
+      // Validate the date
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date/time combination:', dateStr, timeStr);
+        return null;
+      }
+      
+      return date;
+    } catch (error) {
+      console.error('Error parsing date/time:', error, dateStr, timeStr);
+      return null;
     }
   }
 
@@ -681,6 +724,14 @@ export class LLMService {
       if (action.title) (updateData as any).title = action.title;
       if (action.description) (updateData as any).notes = action.description;
       if (action.estimate) (updateData as any).timeEstimate = action.estimate * 60000; // Convert to milliseconds
+
+      // Handle due time if provided
+      if (action.dueDate && action.dueTime) {
+        const dueDateTime = this._combineDateAndTime(action.dueDate, action.dueTime);
+        if (dueDateTime) {
+          (updateData as any).dueWithTime = dueDateTime.getTime();
+        }
+      }
 
       this._taskService.update(taskToUpdate.id, updateData);
 
