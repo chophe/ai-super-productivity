@@ -14,7 +14,7 @@ import {
 } from './llm.model';
 import { GlobalConfigService } from '../../features/config/global-config.service';
 import { TaskService } from '../../features/tasks/task.service';
-import { Task } from '../../features/tasks/task.model';
+import { Task, TaskWithSubTasks } from '../../features/tasks/task.model';
 
 @Injectable({
   providedIn: 'root',
@@ -394,7 +394,7 @@ export class LLMService {
         notes: action.description || '',
         tagIds: action.tags || [],
         timeEstimate: action.estimate ? action.estimate * 60000 : undefined, // Convert minutes to milliseconds
-        projectId: action.projectId || null,
+        projectId: action.projectId || undefined,
       });
 
       return {
@@ -418,10 +418,12 @@ export class LLMService {
     action: TaskAction,
   ): Promise<{ success: boolean; message: string; action: TaskAction }> {
     try {
-      let taskToDelete: Task | null = null;
+      let taskToDelete: TaskWithSubTasks | null = null;
 
       if (action.taskId) {
-        taskToDelete = await this._taskService.getByIdOnce$(action.taskId).toPromise();
+        taskToDelete = await this._taskService
+          .getByIdWithSubTaskData$(action.taskId)
+          .toPromise();
       } else if (action.title) {
         // Search for task by title
         const allTasks = await this._taskService.allTasks$
@@ -435,7 +437,10 @@ export class LLMService {
           .toPromise();
 
         if (allTasks && allTasks.length > 0) {
-          taskToDelete = allTasks[0]; // Take the first match
+          // Get the task with subtask data for proper type
+          taskToDelete = await this._taskService
+            .getByIdWithSubTaskData$(allTasks[0].id)
+            .toPromise();
         }
       }
 
@@ -552,9 +557,9 @@ export class LLMService {
       }
 
       const updateData: Partial<Task> = {};
-      if (action.title) updateData.title = action.title;
-      if (action.description) updateData.notes = action.description;
-      if (action.estimate) updateData.timeEstimate = action.estimate * 60000; // Convert to milliseconds
+      if (action.title) (updateData as any).title = action.title;
+      if (action.description) (updateData as any).notes = action.description;
+      if (action.estimate) (updateData as any).timeEstimate = action.estimate * 60000; // Convert to milliseconds
 
       this._taskService.update(taskToUpdate.id, updateData);
 

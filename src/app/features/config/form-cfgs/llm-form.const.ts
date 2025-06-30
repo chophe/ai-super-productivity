@@ -1,6 +1,5 @@
 import { ConfigFormSection, LimitedFormlyFieldConfig } from '../global-config.model';
-import { LLMConfig, LLMProvider } from '../../core/llm/llm.model';
-import { T } from '../../t.const';
+import { LLMConfig, LLMProvider } from '../../../core/llm/llm.model';
 
 export const LLM_FORM_CFG: LimitedFormlyFieldConfig<LLMConfig>[] = [
   {

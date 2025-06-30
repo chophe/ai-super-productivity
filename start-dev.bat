@@ -1,0 +1,3 @@
+@echo off
+echo Starting Angular development server...
+node --max-old-space-size=8192 node_modules/@angular/cli/bin/ng serve --port 4200 --no-hmr

@@ -1,0 +1,99 @@
+feat: Add LLM-powered natural language task management                                        
+
+                                                                                              
+
+Implement comprehensive LLM integration allowing users to manage tasks                        
+
+through natural language commands triggered by "/" character.                                 
+
+                                                                                              
+
+Features:                                                                                     
+
+- Multi-provider LLM support (OpenAI, Anthropic, Ollama, Custom API)                          
+
+- Natural language task operations (create, delete, update, complete, list)                   
+
+- "/" trigger activation in task input field                                                  
+
+- Visual LLM mode indicators and result feedback                                              
+
+- Secure API key configuration in global settings                                             
+
+- Comprehensive error handling and user feedback                                              
+
+                                                                                              
+
+New files:                                                                                    
+
+- src/app/core/llm/llm.service.ts - Core LLM service with API integration                     
+
+- src/app/core/llm/llm.model.ts - Type definitions and interfaces                             
+
+- src/app/core/llm/llm.service.spec.ts - Basic test structure                                 
+
+- src/app/features/config/form-cfgs/llm-form.const.ts - Configuration form                    
+
+- docs/LLM_TASK_MANAGEMENT.md - Feature documentation                                         
+
+                                                                                              
+
+Modified files:                                                                               
+
+- src/app/features/config/global-config.model.ts - Added LLM config types                     
+
+- src/app/features/config/default-global-config.const.ts - Added default config               
+
+- src/app/features/config/global-config-form-config.const.ts - Added settings form            
+
+- src/app/features/tasks/add-task-bar/add-task-bar.component.* - Enhanced with LLM            
+
+functionality                                                                                 
+
+                                                                                              
+
+Usage: Type "/" in task input, then use natural language commands like:                       
+
+- "/create a task to buy milk"                                                                
+
+- "/delete the grocery task"                                                                  
+
+- "/mark the meeting task as done"                                                            
+
+- "/list all tasks tagged with work"                                                          
+
+                                                                                              
+
+Closes: LLM task management implementation           
+
+✨ feat(llm): integrate LLM task management
+
+- add support for natural language task management commands
+- implement LLM service with provider configurations (OpenAI, Anthropic, Ollama, Custom API)
+- define models for LLM configuration, requests, responses, and task actions
+- integrate LLM mode into the add-task-bar component
+- include example commands for creating, deleting, updating, completing, and listing tasks
+
+✅ test(llm): add unit tests for LLM service
+
+- test LLM service initialization and API key handling
+- verify proper error handling for missing or invalid configurations
+- simulate prompt processing to ensure expected behavior
+
+📝 docs(llm): add documentation for LLM task management
+
+- provide setup instructions for API keys and providers
+- include usage examples for different task operations
+- explain supported providers, technical details, and troubleshooting
+
+💄 style(llm): update UI for LLM mode
+
+- add LLM mode indicator and result display in the add-task bar
+- include styles for success and error states in LLM responses
+- update placeholder text to guide users in LLM mode
+
+📦 build(config): add global config support for LLM integration
+
+- define default LLM configuration in global config
+- add form configuration for LLM settings in the global config UI
+- ensure seamless integration with existing global config structure
