@@ -111,6 +111,13 @@ export class LLMService {
    * Call the configured LLM API
    */
   private _callLLM(request: LLMRequest): Observable<LLMResponse> {
+    console.log('🔄 LLM Provider:', this._llmConfig.provider);
+    console.log('🔄 LLM Config:', { 
+      provider: this._llmConfig.provider, 
+      model: this._llmConfig.model, 
+      baseUrl: this._llmConfig.baseUrl 
+    });
+
     switch (this._llmConfig.provider) {
       case LLMProvider.OPENAI:
         return this._callOpenAI(request);
@@ -131,6 +138,28 @@ export class LLMService {
    * Call OpenAI API
    */
   private _callOpenAI(request: LLMRequest): Observable<LLMResponse> {
+    // Use custom base URL if provided, otherwise use default OpenAI URL
+    let endpoint: string;
+    
+    if (this._llmConfig.baseUrl) {
+      // If custom base URL is provided
+      if (this._llmConfig.baseUrl.includes('/v1/chat/completions')) {
+        // URL already includes the full path
+        endpoint = this._llmConfig.baseUrl;
+      } else {
+        // Add the chat completions path
+        const baseUrl = this._llmConfig.baseUrl.endsWith('/') 
+          ? this._llmConfig.baseUrl.slice(0, -1) 
+          : this._llmConfig.baseUrl;
+        endpoint = `${baseUrl}/v1/chat/completions`;
+      }
+    } else {
+      // Use default OpenAI endpoint
+      endpoint = 'https://api.openai.com/v1/chat/completions';
+    }
+
+    console.log('🔵 Using OpenAI method with endpoint:', endpoint);
+
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this._llmConfig.apiKey}`,
@@ -139,15 +168,22 @@ export class LLMService {
     const body = {
       model: this._llmConfig.model,
       messages: [
-        { role: 'system', content: request.systemPrompt || '' },
+        ...(request.systemPrompt ? [{ role: 'system', content: request.systemPrompt }] : []),
         { role: 'user', content: request.prompt },
       ],
       max_tokens: request.maxTokens || 500,
       temperature: request.temperature || 0.1,
     };
 
+    // Remove any null or undefined values
+    const cleanBody = Object.fromEntries(
+      Object.entries(body).filter(([_, value]) => value !== null && value !== undefined)
+    );
+
+    console.log('🔵 OpenAI request body:', JSON.stringify(cleanBody, null, 2));
+
     return this._http
-      .post<any>('https://api.openai.com/v1/chat/completions', body, { headers })
+      .post<any>(endpoint, cleanBody, { headers })
       .pipe(
         map((response) => ({
           content: response.choices[0].message.content,
@@ -157,6 +193,12 @@ export class LLMService {
             totalTokens: response.usage.total_tokens,
           },
         })),
+        catchError((error) => {
+          console.error('🔴 OpenAI API Error:', error);
+          console.error('🔴 Error status:', error.status);
+          console.error('🔴 Error response:', error.error);
+          return throwError(() => error);
+        }),
       );
   }
 
@@ -231,31 +273,91 @@ export class LLMService {
       return throwError(() => new Error('Custom API base URL not configured'));
     }
 
+    console.log('🟠 Using Custom API method with baseUrl:', this._llmConfig.baseUrl);
+
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this._llmConfig.apiKey}`,
     });
 
-    const body = {
-      model: this._llmConfig.model,
-      prompt: request.prompt,
-      system_prompt: request.systemPrompt,
-      max_tokens: request.maxTokens || 500,
-      temperature: request.temperature || 0.1,
-    };
+    // Check if this is an OpenAI-compatible API (including Azure OpenAI)
+    const isOpenAICompatible =
+      this._llmConfig.baseUrl.includes('openai') ||
+      this._llmConfig.baseUrl.includes('azure') ||
+      this._llmConfig.baseUrl.includes('/v1/chat/completions');
 
-    return this._http
-      .post<any>(`${this._llmConfig.baseUrl}/v1/chat/completions`, body, { headers })
-      .pipe(
-        map((response) => ({
-          content: response.content || response.text || response.response,
-          usage: response.usage || {
-            promptTokens: 0,
-            completionTokens: 0,
-            totalTokens: 0,
-          },
-        })),
-      );
+    console.log('🟠 Is OpenAI compatible:', isOpenAICompatible);
+
+    let body: any;
+    let endpoint: string;
+
+    if (isOpenAICompatible) {
+      // Use OpenAI format for OpenAI-compatible APIs
+      body = {
+        model: this._llmConfig.model,
+        messages: [
+          ...(request.systemPrompt ? [{ role: 'system', content: request.systemPrompt }] : []),
+          { role: 'user', content: request.prompt },
+        ],
+        max_tokens: request.maxTokens || 500,
+        temperature: request.temperature || 0.1,
+      };
+      endpoint = this._llmConfig.baseUrl.endsWith('/v1/chat/completions')
+        ? this._llmConfig.baseUrl
+        : `${this._llmConfig.baseUrl}/v1/chat/completions`;
+    } else {
+      // Use generic format for other custom APIs
+      body = {
+        model: this._llmConfig.model,
+        prompt: request.prompt,
+        ...(request.systemPrompt && { system_prompt: request.systemPrompt }),
+        max_tokens: request.maxTokens || 500,
+        temperature: request.temperature || 0.1,
+      };
+      endpoint = `${this._llmConfig.baseUrl}/v1/chat/completions`;
+    }
+
+    console.log('🟠 Custom API request body:', JSON.stringify(body, null, 2));
+    console.log('🟠 Custom API endpoint:', endpoint);
+
+    // Remove any null or undefined values
+    const cleanBody = Object.fromEntries(
+      Object.entries(body).filter(([_, value]) => value !== null && value !== undefined)
+    );
+
+    console.log('🟠 Custom API clean body:', JSON.stringify(cleanBody, null, 2));
+
+    return this._http.post<any>(endpoint, cleanBody, { headers }).pipe(
+      map((response) => {
+        if (isOpenAICompatible) {
+          // Parse OpenAI-compatible response
+          return {
+            content: response.choices[0].message.content,
+            usage: {
+              promptTokens: response.usage?.prompt_tokens || 0,
+              completionTokens: response.usage?.completion_tokens || 0,
+              totalTokens: response.usage?.total_tokens || 0,
+            },
+          };
+        } else {
+          // Parse generic response
+          return {
+            content: response.content || response.text || response.response,
+            usage: response.usage || {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+            },
+          };
+        }
+      }),
+      catchError((error) => {
+        console.error('🟠 Custom API Error:', error);
+        console.error('🟠 Error status:', error.status);
+        console.error('🟠 Error response:', error.error);
+        return throwError(() => error);
+      }),
+    );
   }
 
   /**
