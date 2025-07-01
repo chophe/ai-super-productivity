@@ -153,6 +153,28 @@ export class TaskUiEffects {
     { dispatch: false },
   );
 
+  taskNotFoundError$ = createEffect(
+    () =>
+      this._actions$.pipe(
+        ofType(TaskSharedActions.updateTask),
+        withLatestFrom(this._store$),
+        filter(([{ task }, state]) => {
+          const taskId = task.id as string;
+          return !state.tasks.entities[taskId];
+        }),
+        tap(([{ task }]) => {
+          const taskId = task.id as string;
+          this._snackService.open({
+            type: 'ERROR',
+            msg: T.F.TASK.S.TASK_NOT_FOUND,
+            translateParams: { taskId },
+            ico: 'error',
+          });
+        }),
+      ),
+    { dispatch: false },
+  );
+
   goToProjectSnack$ = createEffect(
     () =>
       this._actions$.pipe(

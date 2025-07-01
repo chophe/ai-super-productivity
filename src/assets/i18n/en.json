@@ -1218,7 +1218,8 @@
         "REMINDER_ADDED": "Scheduled <strong>{{title}}</strong> at <strong>{{date}}</strong>",
         "REMINDER_DELETED": "Deleted reminder for task",
         "REMINDER_UPDATED": "Updated reminder for task \"{{title}}\"",
-        "TASK_CREATED": "Created task \"{{title}}\""
+        "TASK_CREATED": "Created task \"{{title}}\"",
+        "TASK_NOT_FOUND": "The task you are trying to update does not exist. It may have been deleted."
       },
       "SELECT_OR_CREATE": "Select or create task",
       "SUMMARY_TABLE": {

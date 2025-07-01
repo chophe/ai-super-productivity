@@ -384,6 +384,12 @@ const handleUpdateTask = (
   const currentTask = state[TASK_FEATURE_NAME].entities[taskId] as Task;
 
   if (!currentTask) {
+    // Log the task not found event for monitoring and debugging
+    console.warn('Attempted to update a non-existent task.', {
+      taskId,
+      changes: taskUpdate.changes,
+      timestamp: new Date().toISOString(),
+    });
     return state;
   }
 
