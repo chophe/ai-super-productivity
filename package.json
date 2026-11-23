@@ -239,7 +239,15 @@
     },
     "ngx-markdown": {
       "marked": "12.0.2"
-    }
+    },
+    "tar": "7.5.23",
+    "handlebars": "4.7.10",
+    "form-data": "4.0.6",
+    "shell-quote": "1.12.0",
+    "node-forge": "1.4.3",
+    "dompurify": "3.5.0",
+    "@xmldom/xmldom": "0.8.15",
+    "proxy-addr": "2.0.8"
   },
   "optionalDependencies": {
     "@lmdb/lmdb-darwin-x64": "^3.2.0",
